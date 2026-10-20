@@ -240,12 +240,16 @@ public static class SolarWalkSetup
         }
 
         // Stack the three buttons: Marker, Walk, Desktop
-        ((RectTransform)marker.transform).anchoredPosition = new Vector2(0f, 300f);
-        ((RectTransform)walk.transform).anchoredPosition = new Vector2(0f, 60f);
-        ((RectTransform)desktop.transform).anchoredPosition = new Vector2(0f, -180f);
+        // Stack: title, Marker, Walk, Desktop - all centred so it fits landscape (laptop) and portrait (phone)
+        foreach (var b in new[] { marker, walk, desktop })
+            ((RectTransform)b.transform).sizeDelta = new Vector2(560f, 130f);
+        ((RectTransform)marker.transform).anchoredPosition = new Vector2(0f, 130f);
+        ((RectTransform)walk.transform).anchoredPosition = new Vector2(0f, -20f);
+        ((RectTransform)desktop.transform).anchoredPosition = new Vector2(0f, -170f);
 
         // Title
-        if (GameObject.Find("Title") == null)
+        var titleGO = GameObject.Find("Title");
+        if (titleGO == null)
         {
             var title = new GameObject("Title", typeof(RectTransform));
             title.transform.SetParent(walk.transform.parent, false);
@@ -256,12 +260,12 @@ public static class SolarWalkSetup
             t.alignment = TextAlignmentOptions.Center;
             t.color = new Color(1f, 0.85f, 0.35f);
             t.raycastTarget = false;
-            var rt = t.rectTransform;
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
-            rt.pivot = new Vector2(0.5f, 1f);
-            rt.anchoredPosition = new Vector2(0f, -200f);
-            rt.sizeDelta = new Vector2(1000f, 180f);
+            titleGO = title;
         }
+        var trt = (RectTransform)titleGO.transform;
+        trt.anchorMin = trt.anchorMax = trt.pivot = new Vector2(0.5f, 0.5f);
+        trt.anchoredPosition = new Vector2(0f, 300f);
+        trt.sizeDelta = new Vector2(1000f, 150f);
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
