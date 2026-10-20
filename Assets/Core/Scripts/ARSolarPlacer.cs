@@ -190,7 +190,7 @@ public class ARSolarPlacer : MonoBehaviour
         }
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = Color.black;
-        cam.nearClipPlane = 0.01f;
+        cam.nearClipPlane = 0.005f;
 
         Vector3 f = Flat(cam.transform.forward);
         var root = solar.transform;

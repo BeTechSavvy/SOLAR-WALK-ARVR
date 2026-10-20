@@ -16,12 +16,14 @@ public class FlyCamera : MonoBehaviour
     Transform follow;
     float followDist;
     bool subscribed;
+    bool skipFirst;   // ignore the automatic "select the Sun" at start-up
 
     void OnEnable()
     {
         Vector3 e = transform.eulerAngles;
         yaw = e.y;
         pitch = e.x > 180f ? e.x - 360f : e.x;
+        skipFirst = solar == null || !solar.Ready;
         Subscribe();
     }
 
@@ -40,9 +42,10 @@ public class FlyCamera : MonoBehaviour
 
     void OnSelected(PlanetInfo p)
     {
+        if (skipFirst) { skipFirst = false; return; }
         if (!flyToSelection || p == null) return;
         follow = p.transform;
-        followDist = Mathf.Max(p.transform.lossyScale.x * 0.5f * 5f, 0.05f);
+        followDist = Mathf.Max(p.transform.lossyScale.x * 0.5f * 6f, 0.02f);
 
         // Turn towards the planet.
         Vector3 dir = follow.position - transform.position;
