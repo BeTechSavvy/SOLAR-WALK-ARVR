@@ -16,8 +16,12 @@ public class SolarSystem : MonoBehaviour
     public float daysPerSecond = 20f;   // simulated Earth days per real second
     public float spinSpeed = 20f;       // spin speed multiplier (relative spin rates stay real)
     public bool realScale = false;      // false = "visible" scale, true = true-to-scale
+    public bool enableNumberKeys = true;
+    public Color ambient = new Color(0.06f, 0.06f, 0.09f);   // AR scenes use a brighter value
 
     public Transform Sun { get; private set; }
+    public IReadOnlyList<PlanetInfo> Bodies => bodies;
+    public bool Ready => bodies.Count > 0;
     public event System.Action<PlanetInfo> Selected;
 
     readonly List<PlanetInfo> bodies = new List<PlanetInfo>();
@@ -72,7 +76,7 @@ public class SolarSystem : MonoBehaviour
     {
         // Dark space: almost no ambient light, so the Sun does the lighting.
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.06f, 0.06f, 0.09f);
+        RenderSettings.ambientLight = ambient;
 
         foreach (var r in Rows()) bodies.Add(Create(r));
         Sun = bodies[0].transform;
@@ -154,7 +158,8 @@ public class SolarSystem : MonoBehaviour
             if (p.periodDays > 0f)
             {
                 float a = simDays / p.periodDays * Mathf.PI * 2f;
-                p.transform.position = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Distance(p);
+                // localPosition so the whole system can be moved/scaled as one object (AR table / walk).
+                p.transform.localPosition = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * Distance(p);
             }
             if (p.rotationHours != 0f)
             {
@@ -164,7 +169,7 @@ public class SolarSystem : MonoBehaviour
 
         // Keys 0-8 jump to Sun and planets (handy in true-to-scale mode, where planets are tiny).
         var kb = Keyboard.current;
-        if (kb != null)
+        if (kb != null && enableNumberKeys)
         {
             for (int i = 0; i < FocusKeys.Length && i < bodies.Count; i++)
             {

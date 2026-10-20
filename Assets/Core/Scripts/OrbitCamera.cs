@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-// Right-drag = orbit, scroll = zoom. Put this on the Main Camera.
+// Right-drag = orbit, scroll = zoom (mouse).
+// One-finger drag = orbit, two-finger pinch = zoom (touch, so desktop mode also works on a phone).
+// Put this on the Main Camera.
 [RequireComponent(typeof(Camera))]
 public class OrbitCamera : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class OrbitCamera : MonoBehaviour
     public float rotateSpeed = 0.2f;
 
     float yaw, pitch = 25f;
+    float lastPinch;
 
     void Start()
     {
@@ -23,7 +26,7 @@ public class OrbitCamera : MonoBehaviour
 
     float Radius()
     {
-        return target != null ? target.localScale.x * 0.5f : 1f;
+        return target != null ? target.lossyScale.x * 0.5f : 1f;
     }
 
     // Jump to a body and frame it nicely.
@@ -35,19 +38,51 @@ public class OrbitCamera : MonoBehaviour
 
     void LateUpdate()
     {
-        var m = Mouse.current;
-        if (m == null || target == null) return;
+        if (target == null) return;
 
-        if (m.rightButton.isPressed)
+        var m = Mouse.current;
+        if (m != null)
         {
-            Vector2 d = m.delta.ReadValue();
-            yaw += d.x * rotateSpeed;
-            pitch = Mathf.Clamp(pitch - d.y * rotateSpeed, -85f, 85f);
+            if (m.rightButton.isPressed)
+            {
+                Vector2 d = m.delta.ReadValue();
+                yaw += d.x * rotateSpeed;
+                pitch = Mathf.Clamp(pitch - d.y * rotateSpeed, -85f, 85f);
+            }
+
+            float scroll = m.scroll.ReadValue().y;   // about +/-120 per wheel notch on Windows
+            distance *= 1f - Mathf.Clamp(scroll * 0.001f, -0.5f, 0.5f);
         }
 
-        float scroll = m.scroll.ReadValue().y;   // about +/-120 per wheel notch on Windows
-        distance = Mathf.Clamp(distance * (1f - scroll * 0.001f), Radius() * 1.3f, maxDistance);
+        var ts = Touchscreen.current;
+        if (ts != null)
+        {
+            int down = 0;
+            Vector2 p0 = Vector2.zero, p1 = Vector2.zero, d0 = Vector2.zero;
+            foreach (var t in ts.touches)
+            {
+                if (!t.press.isPressed) continue;
+                if (down == 0) { p0 = t.position.ReadValue(); d0 = t.delta.ReadValue(); }
+                else if (down == 1) p1 = t.position.ReadValue();
+                down++;
+            }
 
+            if (down == 1)
+            {
+                yaw += d0.x * rotateSpeed;
+                pitch = Mathf.Clamp(pitch - d0.y * rotateSpeed, -85f, 85f);
+                lastPinch = 0f;
+            }
+            else if (down >= 2)
+            {
+                float pinch = Vector2.Distance(p0, p1);
+                if (lastPinch > 0f && pinch > 0f) distance *= lastPinch / pinch;
+                lastPinch = pinch;
+            }
+            else lastPinch = 0f;
+        }
+
+        distance = Mathf.Clamp(distance, Radius() * 1.3f, maxDistance);
         transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
         transform.position = target.position - transform.forward * distance;
     }
